@@ -25,6 +25,8 @@ function beam_plot(fig, dir, timestamps, labels;
         push!(intensities, intensity)
         lines!(ax, df.wavelength, intensity .+ i * yoffset, label = labels[i])
     end
+    
     axislegend(ax)
-	ax, intensities
+
+	return ax, intensities
 end
