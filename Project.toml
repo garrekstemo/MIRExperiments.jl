@@ -1,0 +1,8 @@
+name = "MIRExperiments"
+uuid = "62abc0fe-360f-4bdb-9509-5fa7f95b0fe3"
+authors = ["Garrek Stemo <8449000+garrekstemo@users.noreply.github.com>"]
+version = "0.1.0"
+
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+LVM = "76785837-0c5d-45c2-90b8-8e8ea9f9a99d"
