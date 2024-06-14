@@ -1,5 +1,5 @@
 """
-    copy_files!(source, dest, date, timestamps)
+    copy_files(source, dest, date, timestamps)
 
 Copy all tmp files associated with a sig file to a new directory.
 When multiple scans are taken with the spectrometer in LabView,
@@ -11,7 +11,7 @@ The file naming convention is the following:
 yymmdd: date where yy is the year, mm is the month, and dd is the day
 hhmmss: time where hh is the hour, mm is the minute, and ss is the second and hours are in 24-hour format.
 """
-function copy_files!(source, dest, date, timestamps::AbstractVector)
+function copy_files(source, dest, date, timestamps::AbstractVector)
 
     source = realpath(source)
     date = string(date)

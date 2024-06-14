@@ -1,7 +1,7 @@
 module MIRExperiments
 
 export beam_plot,
-       copy_files!
+       copy_files
 
 using GLMakie
 using LVM
