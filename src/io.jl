@@ -1,5 +1,5 @@
 """
-    copy_files!(source, dest, datetime)
+    copy_files!(source, dest, date, timestamps)
 
 Copy all tmp files associated with a sig file to a new directory.
 When multiple scans are taken with the spectrometer in LabView,
@@ -13,53 +13,63 @@ hhmmss: time where hh is the hour, mm is the minute, and ss is the second and ho
 """
 function copy_files!(source, dest, date, timestamps::AbstractVector)
 
-    datetimes = combine_datetimes(date, timestamps)
     source = realpath(source)
+    date = string(date)
+    ext = ".lvm"
+    prefix = "sig_"
 
     if !(isdir(abspath(dest)))
         mkdir(dest)
+        println("$(dest) does not exist. Creating directory.")
     else
         dest = realpath(dest)
     end
 
-    for ts in timestamps
-        filename = "sig_$(ts).lvm"
+    # Make all the directories
+    source_dir = joinpath(source, date)
+    source_temp_dir = joinpath(source_dir, "TEMP")
+    dest_dir = joinpath(dest, date)
+    dest_tmp_dir = joinpath(dest_dir, "TEMP")
+    if !(isdir(dest_dir))
+        mkdir(dest_dir)
+        mkdir(dest_tmp_dir)
+        println("$(dest_dir) does not exist. Creating directory.\n")
+    end
 
-        # Make all the new directories
-        dir = joinpath(source, date)
-        temp_dir = joinpath(dir, "TEMP")
-        new_dir = joinpath(dest, date)
-        new_tmp_dir = joinpath(new_dir, "TEMP")
-        if !(isdir(new_dir))
-            mkdir(new_dir)
-            mkdir(new_tmp_dir)
-        end
-        new_sigpath = joinpath(new_dir, filename)
+    for time in timestamps
+        time = string(time)
+        datetime = combine_datetime(date, time)
+        filename = "$(prefix)$(datetime)$(ext)"
+        new_sigpath = joinpath(dest_dir, filename)
         if !(isfile(new_sigpath))
-            cp(joinpath(dir, filename), new_sigpath) # Copy the averaged file
+            cp(joinpath(source_dir, filename), new_sigpath) # Copy the averaged sig file
+            println("Copying $(filename) to $(new_sigpath)")
         end
 
-        sigfiles = filter(x -> last(x, 4) == ".lvm", readdir(dir))
-        times_here = sort([get_time_from_name(f) for f in sigfiles])
+        sig_files = filter(x -> last(x, length(ext)) == ext, readdir(source_dir))
+        all_timestamps = sort([get_time_from_name(f) for f in sig_files])
 
-        # tmp files are between the target sig file and the previous one.
-        if findfirst(isequal(time), times_here) == 1
-            prev_time = times_here[1]
+        # tmp files have timestamps between the target sig file and the previous one.
+        timestamp_index = findfirst(isequal(time), all_timestamps)
+        if timestamp_index == 1
+            prev_time = all_timestamps[1]
         else
-            prev_time = times_here[findfirst(isequal(time), times_here) - 1]
+            prev_time = all_timestamps[timestamp_index - 1]
         end
     
         # Now copy all the tmp files
-        all_tmp_files = filter(x -> last(x, 4) == ".lvm" && !(contains(x, "debug")), readdir(temp_dir))
+        all_tmp_files = filter(x -> last(x, length(ext)) == ext && !(contains(x, "debug")), readdir(source_temp_dir))
         for f in all_tmp_files
             tmp_time = get_time_from_name(f)
 
             if tmp_time > prev_time && tmp_time < time
-                tmp_file = all_tmp_files[findfirst(contains(tmp_time), all_tmp_files)]
-                current_path = joinpath(temp_dir, tmp_file)
-                new_path = joinpath(new_tmp_dir, tmp_file)
-                if !(isfile(new_path))
-                    cp(current_path, new_path)
+                tmp_file_index = findfirst(contains(tmp_time), all_tmp_files)
+                tmp_file = all_tmp_files[tmp_file_index]
+                source_path = joinpath(source_temp_dir, tmp_file)
+                dest_path = joinpath(dest_tmp_dir, tmp_file)
+                if !(isfile(dest_path))
+                    cp(source_path, dest_path)
+                    println("Copying $(source_path) to $(dest_path)")
                 end
             end
         end
@@ -70,6 +80,13 @@ function get_time_from_name(filename; ext=".lvm")
     chop(filename, head = length("sss_yymmdd_"), tail = length(ext))
 end
 
-function combine_datetimes(date, times)
-    ["$(date)_$(time)" for time in times]
+function combine_datetime(date, time)
+    if length(string(date)) != 6
+        throw(ArgumentError("Date must be in the format yymmdd"))
+    end
+    if length(string(time)) != 6
+        throw(ArgumentError("Times must be in the format hhmmss"))
+    end
+
+    return "$(date)_$(time)"
 end
