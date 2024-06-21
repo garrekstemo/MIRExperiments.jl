@@ -9,4 +9,4 @@ LVM = "76785837-0c5d-45c2-90b8-8e8ea9f9a99d"
 
 [compat]
 julia = "1.10"
-LVM = "0.4"
+LVM = "0"
